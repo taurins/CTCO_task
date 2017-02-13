@@ -19,8 +19,8 @@ namespace CTCO_task
 
         bool expensesCheck;
 
-        decimal total=0;
-        decimal average=0;
+        decimal total = 0;
+        decimal average = 0;
 
         public Form1()
         {
@@ -34,7 +34,7 @@ namespace CTCO_task
             Expenses();
             TotalAverage();
             transAdd();
-            
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -52,7 +52,7 @@ namespace CTCO_task
 
             expenses.Columns.Add("Name", typeof(string));
             expenses.Columns.Add("Amount", typeof(decimal));
-            dataGridView2.DataSource = expenses;            
+            dataGridView2.DataSource = expenses;
         }
 
         private void TotalAverage()
@@ -66,6 +66,7 @@ namespace CTCO_task
 
         private void Expenses()
         {
+            //Calculates expenses for each person
             if (expenses.Rows.Count == 0)
                 expenses.Rows.Add(textBox1.Text, numericUpDown1.Value);
             else
@@ -87,19 +88,17 @@ namespace CTCO_task
 
         private void transAdd()
         {
-
+            //checks whitch person has to pay and which persons get paid
             transChecker = new DataTable();
 
             transChecker.Columns.Add("Name", typeof(string));
             transChecker.Columns.Add("Amount", typeof(decimal));
 
-            
             foreach (DataRow row in expenses.Rows)
             {
-                transChecker.Rows.Add(row["Name"].ToString(), (Convert.ToDecimal(row["Amount"].ToString())-average) );
+                transChecker.Rows.Add(row["Name"].ToString(), (Convert.ToDecimal(row["Amount"].ToString()) - average));
             }
-            transChecker.Select("","Amount asc");
-            dataGridView3.DataSource = transChecker;
+            transChecker.Select("", "Amount asc");
         }
 
         private void transCalc()
@@ -108,37 +107,73 @@ namespace CTCO_task
             transactions.Columns.Add("From", typeof(string));
             transactions.Columns.Add("To", typeof(string));
             transactions.Columns.Add("Amount", typeof(decimal));
+            DataRow rowi;
+            DataRow rowj;
 
-            if(transChecker.Rows.Count>0)
-            for (int i = transChecker.Rows.Count-1; i >=0; i--)
+            for (int i = transChecker.Rows.Count - 1; i >= 0; i--)
             {
-                DataRow rowi = transChecker.Rows[i];
-                if (Convert.ToDecimal(rowi["Amount"].ToString())<0)
+                rowi = transChecker.Rows[i];
+                //for equal transactions
+                if (Convert.ToDecimal(rowi["Amount"].ToString()) < 0)
                     for (int j = transChecker.Rows.Count - 1; j >= 0; j--)
                     {
-                        DataRow rowj = transChecker.Rows[j];
-                            if ((Convert.ToDecimal(rowi["Amount"].ToString()) == (Convert.ToDecimal(rowj["Amount"].ToString()) * (-1))))
+                        rowj = transChecker.Rows[j];
+                        if (rowi["Name"]!= rowj["Name"])
+                            if (Convert.ToDecimal(rowi["Amount"].ToString()) == (Convert.ToDecimal(rowj["Amount"].ToString()) * (-1)))
                             {
                                 transactions.Rows.Add(rowi["Name"].ToString(), rowj["name"].ToString(), rowj["Amount"].ToString());
-                                if (i > j)
-                                {
-                                    transChecker.Rows[i].Delete();
-                                    transChecker.Rows[j].Delete();
-                                }
-                                else
-                                {
-                                    transChecker.Rows[j].Delete();
-                                    transChecker.Rows[i].Delete();
-                                }
-                                break;
-                            }                            
+                                rowi["Amount"] = 0;
+                                rowj["Amount"] = 0;
+
+                            }
                     }
-                    
             }
 
-            dataGridView4.DataSource = transactions;
-        }
+            for (int i = transChecker.Rows.Count - 1; i >= 0; i--)
+            {
+                rowi = transChecker.Rows[i];
+                //for smaler minuses
+                if (Convert.ToDecimal(rowi["Amount"].ToString()) < 0)               
+                    for (int j = transChecker.Rows.Count - 1; j >= 0; j--)
+                    {
+                        rowj = transChecker.Rows[j];
+                        if (rowi["Name"] != rowj["Name"])
+                            if ((Convert.ToDecimal(rowi["Amount"].ToString())) >= (Convert.ToDecimal(rowj["Amount"].ToString()) * (-1)))
+                        {
+                            if (Convert.ToDecimal(rowi["Amount"].ToString()) < 0)
+                            {
+                                transactions.Rows.Add(rowi["Name"].ToString(), rowj["name"].ToString(), rowi["Amount"].ToString());
+                                rowj["Amount"] = Convert.ToString(Convert.ToDecimal(rowj["Amount"]) - (Convert.ToDecimal(rowi["Amount"])*(-1)));
+                                rowi["Amount"] = 0;
 
-        
+                            }
+                        }
+                    }
+            }
+
+
+            for (int i = transChecker.Rows.Count - 1; i >= 0; i--)
+            {
+                rowi = transChecker.Rows[i];
+                //for larger minuses
+                    for (int j = transChecker.Rows.Count - 1; j >= 0; j--)
+                    {
+                        rowj = transChecker.Rows[j];
+                    if (rowi["Name"] != rowj["Name"])
+                        if ((Convert.ToDecimal(rowi["Amount"].ToString()) <= (Convert.ToDecimal(rowj["Amount"].ToString()) * (-1))))
+                        {
+                            if (Convert.ToDecimal(rowi["Amount"].ToString()) < 0)
+                            {
+                                transactions.Rows.Add(rowi["Name"].ToString(), rowj["name"].ToString(), rowj["Amount"].ToString());
+                                rowi["Amount"] = Convert.ToString(Convert.ToDecimal(rowi["Amount"]) + Convert.ToDecimal(rowj["Amount"]));
+                                rowj["Amount"] = 0;
+                            }
+
+                        }
+                    }
+
+            }
+            dataGridView3.DataSource = transactions;
+        }
     }
 }
